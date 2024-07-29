@@ -50,16 +50,16 @@ app.use("/api/about", aboutRoute);
 //   console.log("Resetting top contributor...");
 // });
 
-//* Error Middleware
 app.use(errorHandler);
+
 //* connect to database and start server
 const PORT = process.env.PORT || 5000;
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    // task.start();
+    console.log('Successfully connected to the database'); // Log connection success message
     app.listen(PORT, () => {
-      console.log(`server running on port : ${PORT}`);
+      console.log(`Server running on port: ${PORT}`);
     });
   })
   .catch((err) => {
