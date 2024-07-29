@@ -1,0 +1,162 @@
+# name: Build, publish, and deploy Docker image to EC2
+
+# on:
+#   push:
+#     branches: 
+#       - dev
+#       - qa
+#       - stage
+#       - production
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v1
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ap-southeast-1
+
+#       - name: Login to Amazon ECR
+#         uses: aws-actions/amazon-ecr-login@v1
+
+#       - name: Build Docker image
+#         run: |
+#           # Set build argument based on the branch
+#           if [ "${{ github.ref_name }}" == "production" ]; then
+#             BACKEND_URL="http://production-api-safal.learn.cloudlaya.com:5004"
+#           elif [ "${{ github.ref_name }}" == "stage" ]; then
+#             BACKEND_URL="http://stage-api-safal.learn.cloudlaya.com:5003"
+#           elif [ "${{ github.ref_name }}" == "qa" ]; then
+#             BACKEND_URL="http://qa-api-safal.learn.cloudlaya.com:5002"
+#           else
+#             BACKEND_URL="http://dev-api-safal.learn.cloudlaya.com:5001"
+#           fi
+ 
+#           docker build --build-arg REACT_APP_BACKEND_URL=${BACKEND_URL} -t restappfront .
+
+#       - name: Tag Docker image
+#         run: |
+#           docker tag restappfront:latest 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/restappfront:${{ github.ref_name }}-latest
+
+#       - name: Push Docker image to Amazon ECR
+#         run: |
+#           docker push 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/restappfront:${{ github.ref_name }}-latest
+
+#   deploy:
+#     runs-on: ubuntu-latest
+#     needs: build
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+
+#       - name: SSH into EC2 and deploy
+#         uses: appleboy/ssh-action@master
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USERNAME }}
+#           key: ${{ secrets.SSH_PRIVATE_KEY }}
+#           port: ${{ secrets.EC2_PORT }}
+#           script: |
+#             if [ "${{ github.ref_name }}" == "production" ]; then
+#               sh production/deploy-production.sh
+#             elif [ "${{ github.ref_name }}" == "stage" ]; then
+#               sh stage/deploy-stage.sh
+#             elif [ "${{ github.ref_name }}" == "qa" ]; then
+#               sh qa/deploy-qa.sh
+#             elif [ "${{ github.ref_name }}" == "dev" ]; then
+#               sh dev/deploy-dev.sh
+#             fi
+      
+
+name: Build, publish, and deploy Backend Docker image to EC2
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t safal-backend-dev .
+      
+      - name: Tag Docker image
+        run: |
+         docker tag safal-frontend-dev:latest 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
+      
+      - name: Push Docker image to Amazon ECR
+        run: |
+          docker push 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backtend-dev:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build  # This ensures the deploy job runs after the build job
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Deploy code EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT}}
+          script: |
+            docker pull 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
+            docker stop backend || true
+            docker rm backend || true
+            docker run -d --name frontend -p 5000:5000 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
+
+#at the server do this 
+
+##############To install the AWS CLI, run the following commands.
+# $ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+# unzip awscliv2.zip
+# sudo ./aws/install
+
+
+#############run this code in server
+#aws configure
+#---->aws comand line ko acess id ra acess secret key halne
+##########################se the following steps to authenticate and push an image to your repository. For additional registry authentication methods, including the Amazon ECR credential helper, see Registry Authentication .
+
+# Retrieve an authentication token and authenticate your Docker client to your registry. Use the AWS CLI:
+# aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com
+# Note: If you receive an error using the AWS CLI, make sure that you have the latest version of the AWS CLI and Docker installed.
+
+# Build your Docker image using the following command. For information on building a Docker file from scratch see the instructions here . You can skip this step if your image is already built:
+# docker build -t safal-frontend-dev .      ==>>already done by deploy.yml
+
+# After the build completes, tag your image so you can push the image to this repository:----->>already done by deploy.yml ,so no need to go inside the server and execute this command
+# docker tag safal-frontend-dev:latest 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-frontend-dev:latest
+
+# Run the following command to push this image to your newly created AWS repository:------>>already done by deploy.yml 
+# docker push 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-frontend-dev:latest
+
+
+
