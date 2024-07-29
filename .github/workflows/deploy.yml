@@ -113,7 +113,7 @@ jobs:
       
       - name: Push Docker image to Amazon ECR
         run: |
-          docker push 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backtend-dev:latest
+          docker push 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
 
   deploy:
     runs-on: ubuntu-latest
