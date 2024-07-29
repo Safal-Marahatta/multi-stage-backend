@@ -132,7 +132,7 @@ jobs:
             docker pull 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
             docker stop backend || true
             docker rm backend || true
-            docker run -d --name frontend -p 5000:5000 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
+            docker run -d --name backend -p 5000:5000 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
 
 #at the server do this 
 
