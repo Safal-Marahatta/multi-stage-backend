@@ -109,7 +109,7 @@ jobs:
       
       - name: Tag Docker image
         run: |
-         docker tag safal-frontend-dev:latest 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
+         docker tag safal-backend-dev:latest 654654282708.dkr.ecr.ap-southeast-1.amazonaws.com/safal-backend-dev:latest
       
       - name: Push Docker image to Amazon ECR
         run: |
